@@ -23,7 +23,7 @@ public class JwtConfig extends OncePerRequestFilter {
 	public JwtConfig(JwtUtils jwtUtils) {
 		this.jwtUtils = jwtUtils;
 	}
-	
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
@@ -40,11 +40,7 @@ public class JwtConfig extends OncePerRequestFilter {
 
 		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 			if (jwtUtils.validateToken(jwtToken, username)) {
-				UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-						username, null);
-				usernamePasswordAuthenticationToken
-						.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-				SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+				SecurityContextHolder.getContext().setAuthentication(jwtUtils.getAuthenticationFromToken(jwtToken));
 			}
 		}
 

@@ -218,17 +218,19 @@ public class UserServiceImpl implements UserService {
 
 			if (StringUtils.equalsIgnoreCase(decryptedPassword, password)) {
 				// Check if the current token has expired
-				if (jwtUtils.isTokenExpired(user.getToken()) || StringUtils.isNotEmpty(user.getToken())) {
-					
-					// Token has expired, generate a new token
+				if (StringUtils.isEmpty(user.getToken()) || jwtUtils.isTokenExpired(user.getToken())) {
+
+					// Token has expired or empty, generate a new token
 					String jwtToken = jwtUtils.generateToken(user.getEmail());
 
+					System.out.println("Generated token : "+ jwtToken);
+					
 					// Update the token and its expiration in the user object
 					user.setToken(jwtToken);
 					user.setTokenExpiry(jwtUtils.extractExpiration(jwtToken));
 
 					this.mongoTemplate.save(user);
-				}
+				} 
 
 				return new ResponseEntity<>(user, HttpStatus.OK);
 			} else {
