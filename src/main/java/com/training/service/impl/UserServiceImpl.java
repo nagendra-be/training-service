@@ -48,6 +48,13 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public ResponseEntity<?> createUser(CreateUserRequest request) {
+		
+		Query query = new Query();
+		query.addCriteria(Criteria.where("email").is(request.getEmail()));
+		if (this.mongoTemplate.count(query, User.class) > 0) {
+			return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
+		}
+		
 		User user = new User();
 		BeanUtils.copyProperties(request, user);
 		SecretKey secretKey = this.encryptionUtils.generateSecretKey();
@@ -67,7 +74,7 @@ public class UserServiceImpl implements UserService {
 
 		this.mongoTemplate.save(user);
 
-		return new ResponseEntity<>("Customer successfully created", HttpStatus.OK);
+		return new ResponseEntity<>("User successfully created", HttpStatus.OK);
 	}
 
 	@Override
@@ -141,9 +148,9 @@ public class UserServiceImpl implements UserService {
 			}
 
 			this.mongoTemplate.save(user);
-			return new ResponseEntity<>("Customer is successfully updated", HttpStatus.OK);
+			return new ResponseEntity<>("User is successfully updated", HttpStatus.OK);
 		} else {
-			return new ResponseEntity<>("No Customer found with Id- " + request.getEmail(), HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>("No User found with Id- " + request.getEmail(), HttpStatus.NOT_FOUND);
 		}
 	}
 
@@ -157,7 +164,7 @@ public class UserServiceImpl implements UserService {
 			this.mongoTemplate.save(customer);
 			// Removing corresponding secretkey
 			this.mongoTemplate.remove(query, KeyStorage.class);
-			return new ResponseEntity<>("Customer " + email + " is successfully deleted", HttpStatus.OK);
+			return new ResponseEntity<>("User " + email + " is successfully deleted", HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>("No Customer found with Id-" + email, HttpStatus.NOT_FOUND);
 		}
