@@ -41,6 +41,10 @@ public class User {
 	private String token;
 	@JsonIgnore
 	private Date tokenExpiry;
+	private String uniqueId;
+	private boolean member;
+	private boolean emailVerified;
+	private boolean phoneVerified;
 
 	public String getId() {
 		return this.id;
@@ -192,6 +196,38 @@ public class User {
 
 	public void setTokenExpiry(Date tokenExpiry) {
 		this.tokenExpiry = tokenExpiry;
+	}
+
+	public String getUniqueId() {
+		return this.uniqueId;
+	}
+
+	public void setUniqueId(String uniqueId) {
+		this.uniqueId = uniqueId;
+	}
+
+	public boolean isMember() {
+		return this.member;
+	}
+
+	public void setMember(boolean member) {
+		this.member = member;
+	}
+
+	public boolean isEmailVerified() {
+		return this.emailVerified;
+	}
+
+	public void setEmailVerified(boolean emailVerified) {
+		this.emailVerified = emailVerified;
+	}
+
+	public boolean isPhoneVerified() {
+		return this.phoneVerified;
+	}
+
+	public void setPhoneVerified(boolean phoneVerified) {
+		this.phoneVerified = phoneVerified;
 	}
 
 }

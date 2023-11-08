@@ -2,33 +2,14 @@ package com.training.model;
 
 import java.util.Date;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import com.training.constants.CollectionConstants;
-
-@Document(collection = CollectionConstants.PAYMENTS)
-public class PaymentDetails {
-	@Id
-	private String id;
+public class CreatePaymentRequest {
 	private String userId;
-	private int amount;
-	private Date paymentDate;
 	private String courseId;
-	private boolean membershipTransaction;
-	@CreatedDate
-	private Date createdAt;
 	private String transactionId;
+	private Date transactionDate;
+	private int amount;
 	private String paymentMode;
-
-	public String getId() {
-		return this.id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
+	private boolean membershipTransaction;
 
 	public String getUserId() {
 		return this.userId;
@@ -36,22 +17,6 @@ public class PaymentDetails {
 
 	public void setUserId(String userId) {
 		this.userId = userId;
-	}
-
-	public int getAmount() {
-		return this.amount;
-	}
-
-	public void setAmount(int amount) {
-		this.amount = amount;
-	}
-
-	public Date getPaymentDate() {
-		return this.paymentDate;
-	}
-
-	public void setPaymentDate(Date paymentDate) {
-		this.paymentDate = paymentDate;
 	}
 
 	public String getCourseId() {
@@ -62,20 +27,28 @@ public class PaymentDetails {
 		this.courseId = courseId;
 	}
 
-	public Date getCreatedAt() {
-		return this.createdAt;
-	}
-
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
 	public String getTransactionId() {
 		return this.transactionId;
 	}
 
 	public void setTransactionId(String transactionId) {
 		this.transactionId = transactionId;
+	}
+
+	public Date getTransactionDate() {
+		return this.transactionDate;
+	}
+
+	public void setTransactionDate(Date transactionDate) {
+		this.transactionDate = transactionDate;
+	}
+
+	public int getAmount() {
+		return this.amount;
+	}
+
+	public void setAmount(int amount) {
+		this.amount = amount;
 	}
 
 	public String getPaymentMode() {

@@ -1,9 +1,13 @@
 package com.training.utils;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +32,8 @@ public class JwtUtils {
 
 	@Value("${auth.tokenValidityMinutes}")
 	private long TOKEN_VALIDITY_MINUTES;
+
+	private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
 	public String generateToken(String username) {
 		return createToken(username);
@@ -66,25 +72,33 @@ public class JwtUtils {
 	}
 
 	public Boolean isTokenExpired(String token) {
-		return extractExpiration(token).before(new Date());
+		try {
+			return extractExpiration(token).before(new Date());
+		} catch (ExpiredJwtException e) {
+			logger.info("Token as expired..sending flag");
+			return Boolean.TRUE.booleanValue();
+		} catch (Exception e) {
+			logger.info("Exception occurred while querying token expiry", e);
+			return Boolean.TRUE.booleanValue();
+		}
 	}
-	
+
 	public Authentication getAuthenticationFromToken(String token) {
-	    // Extract claims from the token
-	    Claims claims = extractAllClaims(token);
+		// Extract claims from the token
+		Claims claims = extractAllClaims(token);
 
-	    // Extract the username from the claims
-	    String username = claims.getSubject();
+		// Extract the username from the claims
+		String username = claims.getSubject();
 
-	    // Extract any additional user information you may have stored in the token
-	    // For example, roles or authorities
-	    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-	    authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+		// Extract any additional user information you may have stored in the token
+		// For example, roles or authorities
+		List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+		authorities.add(new SimpleGrantedAuthority("USER"));
 
-	    // Create an instance of UserDetails if needed
-	    UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "", authorities);
+		// Create an instance of UserDetails if needed
+		UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "", authorities);
 
-	    // Return an authentication token with the UserDetails and authorities
-	    return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+		// Return an authentication token with the UserDetails and authorities
+		return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
 	}
 }

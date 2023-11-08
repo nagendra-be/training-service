@@ -7,4 +7,6 @@ public class TrainingConstants {
 	public static final String USER = "USER";
 	public static final String ADMIN = "ADMIN";
 	public static final String STATUS_APPROVED = "APPROVED";
+	public static final String ACTIVE = "ACTIVE";
+	public static final String DELETED = "DELETED";
 }

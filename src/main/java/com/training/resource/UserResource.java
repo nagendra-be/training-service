@@ -1,9 +1,11 @@
 package com.training.resource;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,34 +25,38 @@ public class UserResource {
 
 	@Autowired
 	private UserService userService;
-	
+
+	private static final Logger logger = LoggerFactory.getLogger(UserResource.class);
+
 	@PostMapping("/createuser")
 	public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
-		System.out.println("Inside create user......");
+		logger.info("Creating new user......");
 		return this.userService.createUser(request);
 	}
-
 
 	@GetMapping("/getusers")
 	public ResponseEntity<?> getUsers(@RequestParam(required = false) String searchInput) {
 		return this.userService.getUsers(searchInput);
 	}
 
-	@CrossOrigin(value = "http://localhost:3000")
 	@GetMapping("/getuser")
-	public ResponseEntity<?> getUser(@RequestParam String customerId) {
-		return this.userService.getUser(customerId);
+	public ResponseEntity<?> getUser(@RequestParam String userId) {
+		return this.userService.getUser(userId);
 	}
 
-	@CrossOrigin(value = "http://localhost:3000")
 	@PutMapping("/updateuser")
 	public ResponseEntity<?> updateUser(@RequestBody UpdateUserRequest request) {
+		logger.info("updating account details for user- {}", request.getEmail());
+		String email = request.getEmail();
+		if (StringUtils.isEmpty(email)) {
+			return new ResponseEntity<>("Email Id cannot be empty", HttpStatus.BAD_REQUEST);
+		}
 		return this.userService.updateUser(request);
 	}
 
-	@CrossOrigin(value = "http://localhost:3000")
 	@DeleteMapping("/deleteuser")
-	public ResponseEntity<?> deleteUser(@RequestParam String customerId) {
-		return this.userService.deleteUser(customerId);
+	public ResponseEntity<?> deleteUser(@RequestParam String userId) {
+		logger.info("Deleting account for user- {}", userId);
+		return this.userService.deleteUser(userId);
 	}
 }

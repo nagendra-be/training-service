@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<configuration>
+
+	<!-- Console Appender -->
+	<appender name="CONSOLE"
+		class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>TRACE</level>
+		</filter>
+	</appender>
+
+	<!-- Rolling File Appender -->
+	<appender name="ROLLING"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>lms.log</file>
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>lms.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+			<maxHistory>9</maxHistory>
+			<totalSizeCap>200MB</totalSizeCap>
+			<maxFileSize>20MB</maxFileSize>
+		</rollingPolicy>
+	</appender>
+
+	<root level="info">
+		<appender-ref ref="CONSOLE" /> <!-- Log to console with TRACE level -->
+		<appender-ref ref="ROLLING" /> <!-- Log to rolling file -->
+	</root>
+
+</configuration>
+
+

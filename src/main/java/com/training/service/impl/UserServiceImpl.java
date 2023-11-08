@@ -3,12 +3,15 @@ package com.training.service.impl;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -46,22 +49,27 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private ReferralService referralService;
 
+	private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
 	@Override
 	public ResponseEntity<?> createUser(CreateUserRequest request) {
-		
+
+		logger.info("Inside create user...");
+
 		Query query = new Query();
 		query.addCriteria(Criteria.where("email").is(request.getEmail()));
 		if (this.mongoTemplate.count(query, User.class) > 0) {
 			return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
 		}
-		
+
 		User user = new User();
 		BeanUtils.copyProperties(request, user);
 		SecretKey secretKey = this.encryptionUtils.generateSecretKey();
 		String encryptedPassword = this.encryptionUtils.encrypt(request.getPassword(), secretKey);
 		user.setPassword(encryptedPassword);
 		user.setRole(TrainingConstants.USER);
-		user.setStatus("ACTIVE");
+		user.setUniqueId(UUID.randomUUID().toString());
+		user.setStatus(TrainingConstants.ACTIVE);
 		user.setReferralId(this.referralService.generateUniqueReferralId());
 
 		// storing secret key separately
@@ -70,8 +78,10 @@ public class UserServiceImpl implements UserService {
 		byte[] secretKeyBytes = secretKey.getEncoded();
 		String encodedSecretKey = Base64Utils.encodeToString(secretKeyBytes);
 		keyStorage.setSecretKey(encodedSecretKey);
+		logger.info("Generated secret key for the user- {}", user.getEmail());
 		this.mongoTemplate.save(keyStorage);
 
+		logger.info("Saving user -{} into db", user.getEmail());
 		this.mongoTemplate.save(user);
 
 		return new ResponseEntity<>("User successfully created", HttpStatus.OK);
@@ -79,32 +89,38 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public ResponseEntity<?> getUsers(String searchInput) {
+		logger.info("Querying get all active users in db....");
 		Query query = new Query();
 		if (StringUtils.isNotEmpty(searchInput)) {
 			query = this.getSearchQuery(searchInput);
 		}
+		query.addCriteria(Criteria.where("status").is(TrainingConstants.ACTIVE));
 		List<User> customers = this.mongoTemplate.find(query, User.class);
 		if (!CollectionUtils.isEmpty(customers)) {
 			return new ResponseEntity<>(customers, HttpStatus.OK);
 		} else {
+			logger.info("No users found in users collection...");
 			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
 		}
 	}
 
 	@Override
-	public ResponseEntity<?> getUser(String customerId) {
+	public ResponseEntity<?> getUser(String userId) {
+		logger.info("Querying info for userId- {}", userId);
 		Query query = new Query();
-		query.addCriteria(Criteria.where("email").is(customerId));
+		query.addCriteria(Criteria.where("email").is(userId));
 		User user = this.mongoTemplate.findOne(query, User.class);
 		if (user != null) {
 			return new ResponseEntity<>(user, HttpStatus.OK);
 		} else {
+			logger.info("No user found - {}", userId);
 			return new ResponseEntity<>(new User(), HttpStatus.OK);
 		}
 	}
 
 	@Override
 	public ResponseEntity<?> updateUser(UpdateUserRequest request) {
+		logger.info("Updating user info for user - {}", request.getEmail());
 		Query query = new Query();
 		query.addCriteria(Criteria.where("email").is(request.getEmail()));
 		User user = this.mongoTemplate.findOne(query, User.class);
@@ -126,6 +142,7 @@ public class UserServiceImpl implements UserService {
 			}
 
 			if (request.getPassword() != null) {
+				logger.info("Updating password for user -{}", user.getEmail());
 				KeyStorage keyStorage = this.mongoTemplate.findOne(query, KeyStorage.class,
 						CollectionConstants.KEY_STORAGE);
 				SecretKey secretKey;
@@ -156,12 +173,13 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public ResponseEntity<?> deleteUser(String email) {
+		logger.info("Deleting user with email -{}", email);
 		Query query = new Query();
 		query.addCriteria(Criteria.where("email").is(email));
-		User customer = this.mongoTemplate.findOne(query, User.class);
-		if (customer != null) {
-			customer.setStatus("DELETED");
-			this.mongoTemplate.save(customer);
+		User user = this.mongoTemplate.findOne(query, User.class);
+		if (user != null) {
+			user.setStatus(TrainingConstants.DELETED);
+			this.mongoTemplate.save(user);
 			// Removing corresponding secretkey
 			this.mongoTemplate.remove(query, KeyStorage.class);
 			return new ResponseEntity<>("User " + email + " is successfully deleted", HttpStatus.OK);
@@ -204,6 +222,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public ResponseEntity<?> loginAuthentication(String username, String password) {
+		logger.info("Authenticating user -{}", username);
 		if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
 			return new ResponseEntity<>("Username or Password should not be blank", HttpStatus.BAD_REQUEST);
 		}
@@ -224,20 +243,22 @@ public class UserServiceImpl implements UserService {
 			String decryptedPassword = this.encryptionUtils.decrypt(user.getPassword(), secretKey);
 
 			if (StringUtils.equalsIgnoreCase(decryptedPassword, password)) {
+				logger.info("verifying if correct credentials...");
 				// Check if the current token has expired
 				if (StringUtils.isEmpty(user.getToken()) || jwtUtils.isTokenExpired(user.getToken())) {
+					logger.info("Token is either empty or expired");
 
 					// Token has expired or empty, generate a new token
 					String jwtToken = jwtUtils.generateToken(user.getEmail());
 
-					System.out.println("Generated token : "+ jwtToken);
-					
+					logger.info("Generated token : {} ", jwtToken);
+
 					// Update the token and its expiration in the user object
 					user.setToken(jwtToken);
 					user.setTokenExpiry(jwtUtils.extractExpiration(jwtToken));
 
 					this.mongoTemplate.save(user);
-				} 
+				}
 
 				return new ResponseEntity<>(user, HttpStatus.OK);
 			} else {

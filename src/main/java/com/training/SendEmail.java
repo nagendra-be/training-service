@@ -12,12 +12,11 @@ import javax.mail.internet.MimeMessage;
 
 public class SendEmail {
     public static void main(String[] args) {
-        // Replace with your Office 365 SMTP server and email credentials
         final String smtpServer = "smtp.office365.com";
         final String smtpPort = "587"; // Use 587 for TLS
-        final String smtpUsername = "nagendra_nallamilli@suchiit.com";
-        final String smtpPassword = "n@ge1994"; // Use an App Password for SMTP if MFA is enabled
-        final String senderEmail = "nagendra_nallamilli@suchiit.com";
+        final String smtpUsername = "no-reply@suchiit.com";
+        final String smtpPassword = "Rud62831";
+        final String senderEmail = "no-reply@suchiit.com";
         final String recipientEmail = "nagendra_nallamilli@suchiit.com";
 
         Properties props = new Properties();
