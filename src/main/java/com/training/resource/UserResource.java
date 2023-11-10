@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.training.constants.TrainingConstants;
 import com.training.model.CreateUserRequest;
 import com.training.model.UpdateUserRequest;
 import com.training.service.UserService;
@@ -42,6 +43,21 @@ public class UserResource {
 	@GetMapping("/getuser")
 	public ResponseEntity<?> getUser(@RequestParam String userId) {
 		return this.userService.getUser(userId);
+	}
+
+	@GetMapping("/verifyemail")
+	public ResponseEntity<?> emailVerify(@RequestParam String uniqueId) {
+		return this.userService.verifyEmail(uniqueId);
+	}
+
+	@GetMapping("/sendverifyemail")
+	public ResponseEntity<?> sendEmailVerify(@RequestParam String userId) {
+		return this.userService.sendEmail(userId, TrainingConstants.VERIFY_EMAIL);
+	}
+
+	@GetMapping("/sendresetpassword")
+	public ResponseEntity<?> sendForgotPassword(@RequestParam String userId) {
+		return this.userService.sendEmail(userId, TrainingConstants.FORGOT_PASSWORD);
 	}
 
 	@PutMapping("/updateuser")

@@ -14,6 +14,7 @@ public class PaymentDetails {
 	private String id;
 	private String userId;
 	private int amount;
+	private int creditsUsed;
 	private Date paymentDate;
 	private String courseId;
 	private boolean membershipTransaction;
@@ -44,6 +45,14 @@ public class PaymentDetails {
 
 	public void setAmount(int amount) {
 		this.amount = amount;
+	}
+
+	public int getCreditsUsed() {
+		return this.creditsUsed;
+	}
+
+	public void setCreditsUsed(int creditsUsed) {
+		this.creditsUsed = creditsUsed;
 	}
 
 	public Date getPaymentDate() {

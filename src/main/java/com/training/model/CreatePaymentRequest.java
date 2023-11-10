@@ -8,6 +8,7 @@ public class CreatePaymentRequest {
 	private String transactionId;
 	private Date transactionDate;
 	private int amount;
+	private int creditsUsed;
 	private String paymentMode;
 	private boolean membershipTransaction;
 
@@ -49,6 +50,14 @@ public class CreatePaymentRequest {
 
 	public void setAmount(int amount) {
 		this.amount = amount;
+	}
+
+	public int getCreditsUsed() {
+		return this.creditsUsed;
+	}
+
+	public void setCreditsUsed(int creditsUsed) {
+		this.creditsUsed = creditsUsed;
 	}
 
 	public String getPaymentMode() {

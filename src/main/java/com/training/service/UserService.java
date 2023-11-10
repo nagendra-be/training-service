@@ -10,7 +10,7 @@ public interface UserService {
 	ResponseEntity<?> createUser(CreateUserRequest request);
 
 	ResponseEntity<?> getUsers(String searchInput);
-	
+
 	ResponseEntity<?> getUser(String customerId);
 
 	ResponseEntity<?> updateUser(UpdateUserRequest request);
@@ -18,4 +18,10 @@ public interface UserService {
 	ResponseEntity<?> deleteUser(String customerId);
 
 	ResponseEntity<?> loginAuthentication(String username, String password);
+
+	ResponseEntity<?> verifyEmail(String uniqueId);
+
+	ResponseEntity<?> sendEmail(String userId, String operation);
+
+	void calculateRemainingCredits(String userId);
 }

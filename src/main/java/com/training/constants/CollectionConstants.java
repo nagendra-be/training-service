@@ -7,4 +7,5 @@ public class CollectionConstants {
 	public static final String KEY_STORAGE = "keystorage";
 	public static final String ACTIVITY_LOG = "activity";
 	public static final String PAYMENTS = "payments";
+	public static final String CREDITS = "credits";
 }

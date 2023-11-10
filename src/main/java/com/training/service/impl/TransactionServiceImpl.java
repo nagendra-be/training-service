@@ -20,14 +20,19 @@ import org.springframework.util.CollectionUtils;
 
 import com.training.constants.TrainingConstants;
 import com.training.model.CreatePaymentRequest;
+import com.training.model.CreditsDetails;
 import com.training.model.PaymentDetails;
 import com.training.model.UserCourseMapping;
 import com.training.service.TransactionService;
+import com.training.service.UserService;
 
 public class TransactionServiceImpl implements TransactionService {
 
 	@Autowired
 	private MongoTemplate mongoTemplate;
+
+	@Autowired
+	private UserService userService;
 
 	private static final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
@@ -51,6 +56,7 @@ public class TransactionServiceImpl implements TransactionService {
 		PaymentDetails paymentDetails = new PaymentDetails();
 		paymentDetails.setMembershipTransaction(request.isMembershipTransaction());
 		paymentDetails.setAmount(request.getAmount());
+		paymentDetails.setCreditsUsed(request.getCreditsUsed());
 		paymentDetails.setUserId(request.getUserId());
 		paymentDetails.setPaymentDate(request.getTransactionDate());
 		paymentDetails.setPaymentMode(request.getPaymentMode());
@@ -58,7 +64,21 @@ public class TransactionServiceImpl implements TransactionService {
 		if (StringUtils.isNotEmpty(request.getCourseId())) {
 			paymentDetails.setCourseId(request.getCourseId());
 		}
+
 		this.mongoTemplate.save(paymentDetails);
+
+		if (request.getCreditsUsed() > 0) {
+			CreditsDetails creditsDetails = new CreditsDetails();
+			creditsDetails.setAmount(request.getCreditsUsed());
+			creditsDetails.setCourseId(request.getCourseId());
+			creditsDetails.setTransactionDate(request.getTransactionDate());
+			creditsDetails.setUserId(request.getUserId());
+			creditsDetails.setType(TrainingConstants.USE);
+			this.mongoTemplate.save(creditsDetails);
+
+			this.userService.calculateRemainingCredits(request.getUserId());
+
+		}
 
 		return new ResponseEntity<>("Payment details successfully recorded", HttpStatus.OK);
 	}
@@ -123,5 +143,19 @@ public class TransactionServiceImpl implements TransactionService {
 			query.addCriteria(criteria);
 		}
 		return query;
+	}
+
+	@Override
+	public ResponseEntity<?> getCreditsByUser(String userId) {
+		logger.info("Querying get all credits/rewards transactions in db for userId-{}", userId);
+		Query query = new Query();
+		query.addCriteria(Criteria.where("userId").is(userId));
+		List<CreditsDetails> creditsDetails = this.mongoTemplate.find(query, CreditsDetails.class);
+		if (!CollectionUtils.isEmpty(creditsDetails)) {
+			return new ResponseEntity<>(creditsDetails, HttpStatus.OK);
+		} else {
+			logger.info("No records found in credits collection for userId- {}", userId);
+			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+		}
 	}
 }

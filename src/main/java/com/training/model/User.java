@@ -45,6 +45,9 @@ public class User {
 	private boolean member;
 	private boolean emailVerified;
 	private boolean phoneVerified;
+	@JsonIgnore
+	private Date emailExpiry;
+	private int credits;
 
 	public String getId() {
 		return this.id;
@@ -228,6 +231,22 @@ public class User {
 
 	public void setPhoneVerified(boolean phoneVerified) {
 		this.phoneVerified = phoneVerified;
+	}
+
+	public Date getEmailExpiry() {
+		return this.emailExpiry;
+	}
+
+	public void setEmailExpiry(Date emailExpiry) {
+		this.emailExpiry = emailExpiry;
+	}
+
+	public int getCredits() {
+		return credits;
+	}
+
+	public void setCredits(int credits) {
+		this.credits = credits;
 	}
 
 }

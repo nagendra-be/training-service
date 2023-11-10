@@ -35,7 +35,12 @@ public class TransactionResource {
 	}
 
 	@GetMapping("/byuser")
-	public ResponseEntity<?> getCourse(@RequestParam String userId) {
+	public ResponseEntity<?> getPaymentsByUser(@RequestParam String userId) {
 		return this.transactionService.getTransactionsByUser(userId);
+	}
+
+	@GetMapping("/credits/byuser")
+	public ResponseEntity<?> getCreditsByUser(@RequestParam String userId) {
+		return this.transactionService.getCreditsByUser(userId);
 	}
 }

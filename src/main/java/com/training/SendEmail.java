@@ -14,9 +14,9 @@ public class SendEmail {
     public static void main(String[] args) {
         final String smtpServer = "smtp.office365.com";
         final String smtpPort = "587"; // Use 587 for TLS
-        final String smtpUsername = "no-reply@suchiit.com";
-        final String smtpPassword = "Rud62831";
-        final String senderEmail = "no-reply@suchiit.com";
+        final String smtpUsername = "nagendra_nallamilli@suchiit.com";
+        final String smtpPassword = "n@ge1994";
+        final String senderEmail = "nagendra_nallamilli@suchiit.com";
         final String recipientEmail = "nagendra_nallamilli@suchiit.com";
 
         Properties props = new Properties();

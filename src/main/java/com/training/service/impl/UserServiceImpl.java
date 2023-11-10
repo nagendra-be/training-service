@@ -1,8 +1,12 @@
 package com.training.service.impl;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -14,11 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
 import org.springframework.util.CollectionUtils;
@@ -26,9 +32,11 @@ import org.springframework.util.CollectionUtils;
 import com.training.constants.CollectionConstants;
 import com.training.constants.TrainingConstants;
 import com.training.model.CreateUserRequest;
+import com.training.model.CreditsDetails;
 import com.training.model.KeyStorage;
 import com.training.model.User;
 import com.training.model.UpdateUserRequest;
+import com.training.service.EmailService;
 import com.training.service.ReferralService;
 import com.training.service.UserService;
 import com.training.utils.EncryptionUtils;
@@ -48,6 +56,12 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private ReferralService referralService;
+
+	@Autowired
+	private EmailService emailService;
+
+	@Value("${referral.amount}")
+	private int referralAmount;
 
 	private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
@@ -83,6 +97,11 @@ public class UserServiceImpl implements UserService {
 
 		logger.info("Saving user -{} into db", user.getEmail());
 		this.mongoTemplate.save(user);
+
+		// Adding credits to the referrer
+		if (StringUtils.isNotEmpty(request.getReferredBy())) {
+			this.addCredits(request.getReferredBy());
+		}
 
 		return new ResponseEntity<>("User successfully created", HttpStatus.OK);
 	}
@@ -268,4 +287,148 @@ public class UserServiceImpl implements UserService {
 			return new ResponseEntity<>("Email Id doesn't exist", HttpStatus.FORBIDDEN);
 		}
 	}
+
+	@Override
+	public ResponseEntity<?> verifyEmail(String uniqueId) {
+		// Query for the user with the unique token
+		Query query = new Query();
+		query.addCriteria(Criteria.where("uniqueId").is(uniqueId));
+		User user = this.mongoTemplate.findOne(query, User.class);
+
+		// Check if the user exists and the token is valid
+		if (user != null) {
+			if (user.getEmailExpiry().after(new Date())) {
+				// Mark the email as verified
+				user.setEmailVerified(true);
+
+				// Save the updated user
+				this.mongoTemplate.save(user);
+
+				return new ResponseEntity<>("Email verification successful", HttpStatus.OK);
+			} else {
+				return new ResponseEntity<>("Email link expired", HttpStatus.BAD_REQUEST);
+			}
+		} else {
+			return new ResponseEntity<>("Invalid email verification token", HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	@Override
+	public ResponseEntity<?> sendEmail(String userId, String operation) {
+
+		Query query = new Query();
+		query.addCriteria(Criteria.where("email").is(userId));
+		User user = mongoTemplate.findOne(query, User.class);
+
+		if (user != null) {
+			user.setEmailExpiry(this.calculateEmailTokenExpiry());
+			this.mongoTemplate.save(user);
+
+			Map<String, String> emailContent = this.getEmailContent(user, operation);
+
+			// Sending the verification email
+			emailService.send("no-reply@suchiit.com", user.getEmail(), null, null, emailContent.get("subject"),
+					emailContent.get("text"));
+
+			return new ResponseEntity<>("Verification email sent successfully", HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+		}
+	}
+
+	private Date calculateEmailTokenExpiry() {
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR_OF_DAY, 2);
+		return calendar.getTime();
+	}
+
+	private Map<String, String> getEmailContent(User user, String operation) {
+		// Preparing the verification email content based on operation
+		String subject = "";
+		String text = "";
+
+		if (TrainingConstants.VERIFY_EMAIL.equalsIgnoreCase(operation)) {
+			subject = "Email Verification SITC - Action Required";
+			text = "Dear " + user.getFirstName() + " " + user.getLastName() + ",\n\n"
+					+ "Thank you for choosing our platform. To complete your registration, please click the following link to verify your email address:\n"
+					+ "http://sitc.com/verify?token=" + user.getUniqueId()
+					+ "\n\nNote: This link will expire in 2 hours.\n\n"
+					+ "If you did not sign up for our platform, please ignore this email.\n\n"
+					+ "Best Regards,\nThe SITC Team";
+		} else if (TrainingConstants.FORGOT_PASSWORD.equalsIgnoreCase(operation)) {
+			subject = "Password Reset SITC - Action Required";
+			text = "Dear " + user.getFirstName() + " " + user.getLastName() + ",\n\n"
+					+ "We received a request to reset your password. Click the following link to reset your password:\n"
+					+ "http://sitc.com/reset-password?token=" + user.getUniqueId()
+					+ "\n\nNote: This link will expire in 2 hours.\n\n"
+					+ "If you did not request a password reset, please ignore this email.\n\n"
+					+ "Best Regards,\nThe SITC Team";
+		}
+
+		Map<String, String> emailContent = new HashMap<>();
+		emailContent.put("subject", subject);
+		emailContent.put("text", text);
+
+		return emailContent;
+	}
+
+	@Override
+	@Async
+	public void calculateRemainingCredits(String userId) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where("email").is(userId));
+
+		List<CreditsDetails> creditsDetailsList = mongoTemplate.find(query, CreditsDetails.class);
+
+		int remainingCredits = 0;
+
+		if (CollectionUtils.isEmpty(creditsDetailsList)) {
+			logger.info("There are no credits transactions found for the user- {}", userId);
+			return;
+		} else {
+			for (CreditsDetails creditsDetails : creditsDetailsList) {
+				if (TrainingConstants.ADD.equals(creditsDetails.getType())) {
+					remainingCredits += creditsDetails.getAmount();
+				} else if (TrainingConstants.USE.equals(creditsDetails.getType())) {
+					remainingCredits -= creditsDetails.getAmount();
+				}
+			}
+
+			User user = this.mongoTemplate.findOne(query, User.class);
+			if (user != null) {
+				user.setCredits(remainingCredits);
+				this.mongoTemplate.save(user);
+				logger.info("Successfully saved latest credits for user - {}", userId);
+			} else {
+				logger.info("User not found -{}", userId);
+				return;
+			}
+
+		}
+
+	}
+
+	private void addCredits(String referredBy) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where("referralId").is(referredBy));
+
+		User user = this.mongoTemplate.findOne(query, User.class);
+
+		if (user != null) {
+			CreditsDetails creditsDetails = new CreditsDetails();
+			creditsDetails.setAmount(this.referralAmount);
+			creditsDetails.setType(TrainingConstants.ADD);
+			creditsDetails.setUserId(user.getEmail());
+			creditsDetails.setTransactionDate(new Date());
+			this.mongoTemplate.save(creditsDetails);
+
+			logger.info("Successfully captured referral credits into db for user- {}", user.getEmail());
+
+			this.calculateRemainingCredits(user.getEmail());
+		} else {
+			logger.info("Invalid referral code used- {}", referredBy);
+		}
+
+	}
+
 }
