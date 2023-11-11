@@ -1,9 +1,11 @@
 package com.training.service;
 
+import org.springframework.http.ResponseEntity;
+
 import com.training.model.PaymentRequest;
 
 public interface PaymentService {
 
-	String initiatePayment(PaymentRequest paymentRequest);
+	ResponseEntity<?> initiatePayment(PaymentRequest paymentRequest);
 
 }
