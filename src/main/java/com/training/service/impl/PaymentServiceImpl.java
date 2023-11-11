@@ -9,9 +9,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
 	private String createBase64EncodedPayload(PaymentRequest paymentRequest) throws Exception {
 		Map<String, Object> data = new HashMap<>();
 		data.put("merchantId", this.merchantId);
-		data.put("merchantTransactionId", paymentRequest.getMerchantTransactionId());
+		data.put("merchantTransactionId", this.generateUniqueTransactionId());
 		data.put("merchantUserId", paymentRequest.getMerchantUserId());
 		data.put("redirectUrl", this.redirectUrl);
 		data.put("callbackUrl", this.callbackUrl);
@@ -125,6 +128,30 @@ public class PaymentServiceImpl implements PaymentService {
 			hexString.append(hex);
 		}
 		return hexString.toString();
+	}
+
+	private String generateUniqueTransactionId() {
+		// Generate a random component for the transactionId
+		String randomComponent = generateRandomComponent(10);
+
+		// Get the current date in the format YYYYMMDD
+		String currentDate = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+
+		// Combine date and random component with an underscore
+		return currentDate + "_" + randomComponent;
+	}
+
+	private String generateRandomComponent(int length) {
+		// Generate a random alphanumeric string of the specified length
+		String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		Random random = new Random();
+		StringBuilder randomComponent = new StringBuilder(length);
+
+		for (int i = 0; i < length; i++) {
+			randomComponent.append(characters.charAt(random.nextInt(characters.length())));
+		}
+
+		return randomComponent.toString();
 	}
 
 }
