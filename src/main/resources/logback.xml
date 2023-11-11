@@ -22,10 +22,10 @@
 		</encoder>
 		<rollingPolicy
 			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>lms.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+			<fileNamePattern>lms.%d{yyyy-MM-dd}.log</fileNamePattern>
 			<maxHistory>9</maxHistory>
 			<totalSizeCap>200MB</totalSizeCap>
-			<maxFileSize>20MB</maxFileSize>
+			<cleanHistoryOnStart>true</cleanHistoryOnStart> <!-- Add this line -->
 		</rollingPolicy>
 	</appender>
 
@@ -35,5 +35,3 @@
 	</root>
 
 </configuration>
-
-

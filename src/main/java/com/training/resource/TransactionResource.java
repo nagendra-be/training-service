@@ -15,7 +15,7 @@ import com.training.model.CreatePaymentRequest;
 import com.training.service.TransactionService;
 
 @RestController
-@RequestMapping("/api/v1/training/payments")
+@RequestMapping("/api/v1/training/transactions")
 public class TransactionResource {
 
 	@Autowired
@@ -23,13 +23,13 @@ public class TransactionResource {
 
 	private static final Logger logger = LoggerFactory.getLogger(TransactionResource.class);
 
-	@PostMapping("/createpayment")
+	@PostMapping("/createtransaction")
 	public ResponseEntity<?> createPayment(@RequestBody CreatePaymentRequest request) {
 		logger.info("Creating new payment......");
 		return this.transactionService.createUserCourseTransaction(request);
 	}
 
-	@GetMapping("/getpayments")
+	@GetMapping("/gettransactions")
 	public ResponseEntity<?> getPayments(@RequestParam(required = false) String searchInput) {
 		return this.transactionService.getTransactions(searchInput);
 	}

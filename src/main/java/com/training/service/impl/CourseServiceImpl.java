@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.training.constants.TrainingConstants;
@@ -27,6 +28,7 @@ import com.training.model.UpdateCourseRequest;
 import com.training.model.UserCourseMapping;
 import com.training.service.CourseService;
 
+@Service
 public class CourseServiceImpl implements CourseService {
 
 	@Autowired
